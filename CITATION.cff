@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite it using the metadata below."
+title: "Agent Deployment into Coupled Systems: A Working Framework"
+version: "1.0"
+date-released: "2026-04-30"
+authors:
+  - family-names: "Alioto"
+    given-names: "John P."
+abstract: >
+  A structural framework for analyzing the deployment of AI agents into
+  coupled operational systems. Identifies the primitive that AI agents are
+  built around, the composition path from primitive to autonomous system,
+  the deployment error that produces the central failure mode (false
+  closure), and the dynamics that govern how that failure propagates
+  through coupled engineered systems. Intended for engineers, architects,
+  operators, and governance practitioners working on agent deployment.
+keywords:
+  - AI agents
+  - agent deployment
+  - LLM agents
+  - coupled systems
+  - cascade dynamics
+  - operational closure
+  - false closure
+  - viability theory
+  - resilience engineering
+  - AI safety
+type: report
+url: "https://github.com/jpalioto/agent-lifecycle-framework"
+license-url: "https://github.com/jpalioto/agent-lifecycle-framework"

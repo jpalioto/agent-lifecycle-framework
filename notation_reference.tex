@@ -1,0 +1,487 @@
+\documentclass[11pt]{article}
+
+% --- Encoding and fonts ---
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+% --- Layout ---
+\usepackage[margin=1in]{geometry}
+\usepackage{setspace}
+\setstretch{1.05}
+
+% --- Math ---
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{mathtools}
+
+% --- Tables ---
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{longtable}
+\usepackage{array}
+
+% --- Lists and structure ---
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=1.5em, topsep=0.3em, itemsep=0.2em}
+
+% --- Hyperref last ---
+\usepackage{xcolor}
+\usepackage[colorlinks=true,linkcolor=black,urlcolor=blue!50!black,citecolor=black]{hyperref}
+
+% --- Section formatting ---
+\usepackage{titlesec}
+\titlespacing*{\section}{0pt}{1.6em}{0.6em}
+\titlespacing*{\subsection}{0pt}{1.2em}{0.4em}
+\titleformat{\section}{\Large\bfseries}{\thesection.}{0.6em}{}
+\titleformat{\subsection}{\large\bfseries}{\thesubsection}{0.6em}{}
+
+% --- Custom operators ---
+\DeclareMathOperator{\Cl}{Cl}
+\DeclareMathOperator{\Viab}{Viab}
+\DeclareMathOperator{\Iterate}{Iterate}
+
+% --- Notation entry environment ---
+% \notation{symbol}{description}
+\newcommand{\notation}[2]{%
+  \par\smallskip
+  \noindent\textbf{#1} \, #2\par
+}
+
+% \reason{tag}{text}
+\newcommand{\reason}[2]{%
+  \par\nopagebreak
+  \begingroup
+    \leftskip=1.5em
+    \sloppy
+    \noindent\textit{Reason:} \textbf{[#1]} #2\par
+  \endgroup
+  \par\smallskip
+}
+
+% --- Title ---
+\title{\textbf{Notation Reference}\\[0.3em]
+\large A working notation for AI agent deployment in coupled systems}
+\author{John P. Alioto}
+\date{Version 1.0 \\ April 2026}
+
+\begin{document}
+
+\maketitle
+
+\section*{Preamble}
+
+This document defines the notation used across the author's published and in-progress work on AI agent deployment, runtime governance, ambient reachability, and existential risk measurement. The goal is internal consistency across the author's own work and external alignment with established literatures where possible.
+
+Each entry below states the symbol, what it represents, where it is used, and the reason for the chosen notation. Reasons are tagged:
+
+\begin{itemize}
+    \item \textbf{[Literature]} --- the convention is standard in published literature on the relevant topic.
+    \item \textbf{[JPA-consistent]} --- the convention matches the author's prior published or working papers.
+    \item \textbf{[Disambiguating]} --- the convention was chosen specifically to avoid collision with other uses in the author's body of work or in adjacent literatures.
+    \item \textbf{[Framework-specific]} --- the convention is introduced for analytical purposes specific to the framework, with no direct prior-art equivalent.
+\end{itemize}
+
+\bigskip
+\hrule
+\bigskip
+
+\section{The Transformer Pipeline}
+
+The autoregressive transformer is treated as a four-stage pipeline:
+\[
+c_t \xrightarrow{\,f_\theta\,} h_t \xrightarrow{\,G_\theta\,} z_t \xrightarrow{\,K_\varphi\,} x_{t+1}
+\]
+
+This decomposition follows the convention in the author's security talk \emph{AI Security: The Geometry of Failure} and aligns with the broader transformer literature (Vaswani et al., 2017; Stanford STATS 305B notes; Tiny Recursive Models; Linear Transformers).
+
+\subsection*{Symbols}
+
+\notation{$\theta$}{Fixed model weights.}
+\reason{Literature}{Standard parameter notation across machine learning. Used universally in transformer papers.}
+
+\notation{$c_t$}{The accumulated context at time $t$. The notation $c_{\le t}$ is used only when accumulation needs emphasis.}
+\reason{Framework-specific}{Used to denote the assembled prompt-plus-history-plus-retrieved-content that the model receives as input. The literature is less standardized here --- some papers use the input sequence directly, some use embedded representations. The framework needs a single symbol for ``what the model is conditioned on at time $t$'' that is distinct from the input token $x_t$ and from the hidden state $h_t$.}
+
+\notation{$c_{\le t}$}{The accumulated context up through time $t$, with explicit accumulation.}
+\reason{Framework-specific}{Used only when accumulation needs emphasis. Otherwise $c_t$ is sufficient.}
+
+\notation{$f_\theta$}{The model's mapping from context to hidden state: $h_t = f_\theta(c_t)$.}
+\reason{JPA-consistent, Literature}{Used in the security talk for the recurrence-to-hidden-state stage. Aligned with broader literature where $f_\theta$ commonly denotes a parameterized model component.}
+
+\notation{$h_t$}{The model's conditioned hidden state at time $t$. $h_t \in \mathbb{R}^d$ where $d$ is the model dimension.}
+\reason{Literature, JPA-consistent}{Universal convention in transformer and RNN literature for hidden state at time $t$. Used in the security talk as the central object of analysis. The Tiny Recursive Models paper, Linear Transformers, and Stanford notes all use $h_t$ for hidden state. The framework explicitly redirects $h_t$ away from the earlier ``harness state'' usage to align with this universal convention.}
+
+\notation{$G_\theta$}{The projection from hidden state to logits: $z_t = G_\theta(h_t)$.}
+\reason{JPA-consistent}{Used in the security talk for the projection-to-vocabulary-logits stage. The literature varies --- some papers use a weight matrix $W$ directly (Stanford notes use $W \in \mathbb{R}^{V \times D}$), some use unembedding matrices. $G_\theta$ is consistent with the security talk's pipeline schematic. Note: the mechanistic interpretability literature (Elhage et al.; Anthropic transformer-circuits work) frequently uses $W_U$ (unembedding matrix) for this projection. $G_\theta$ is used here both to avoid collision with the cascade matrix $W$ and because $G_\theta$ can encompass non-linearities or LayerNorm along with the unembedding step, where $W_U$ strictly denotes the linear unembedding operation alone.}
+
+\notation{$z_t$}{The logit field over vocabulary $V$ at time $t$. $z_t \in \mathbb{R}^{|V|}$.}
+\reason{JPA-consistent, Literature}{Used in the security talk for the logit field. Consistent with Linear Transformers and similar papers where $z_t$ denotes a hidden or output vector. The framework's ``logit-transition primitive'' framing centers on $z_t$ as the model's actual output (before sampling).}
+
+\notation{$K_\varphi$}{The sampling/decoding policy that collapses logits to a token: $x_{t+1} = K_\varphi(z_t)$. Includes temperature, top-$k$, top-$p$, and grammar constraints.}
+\reason{JPA-consistent}{Used in the security talk for the sampling-collapse stage. Distinct from the gain matrix $K$ used in the author's runtime-stabilization papers and from the cascade matrix $W$ used in this framework. The $\varphi$ subscript explicitly distinguishes the sampling kernel from other uses of $K$.}
+
+\notation{$x_t$}{The token at position $t$ in the autoregressive sequence. The model output $x_{t+1} = K_\varphi(z_t)$ becomes part of the next input via $c_{t+1}$.}
+\reason{Literature}{Universal convention in autoregressive language modeling. The Stanford notes, Tiny Recursive Models, and the Mesa-optimization paper all use $x_t$ for input tokens. The framework explicitly redirects $x_t$ away from the earlier ``decoded output / action proposal'' usage to align with this universal convention. This required dropping $x_t$ from the agentic loop chain in section 7 of the framework, which was previously using $x_t$ for what is now correctly named $a_t$ (action) or implicit between $z_t$ and $a_t$.}
+
+\notation{$V$}{The vocabulary set. The cardinality $|V|$ represents the vocabulary size.}
+\reason{Literature}{Universal convention to treat $V$ as a set whose cardinality is the size. Earlier wording defined $V$ as ``vocabulary size'' directly; this is mathematically imprecise because $|V|$ would then be the absolute value of an integer rather than the cardinality of a set. The set/cardinality distinction is the standard usage.}
+
+\section{Composition Layer}
+
+These symbols denote the engineered control structures around the model primitive.
+
+\notation{$C$}{The composite control layer: parsers, validators, policy checks, orchestration, authority boundaries.}
+\reason{Framework-specific}{The framework distinguishes the model primitive (the pipeline above) from the engineering construction around it. $C$ is the catch-all symbol for that construction.}
+
+\notation{$U$}{The context/state update operator that incorporates decoded output, tool observations, memory, and environment feedback into later context.}
+\reason{Framework-specific}{The framework needs a symbol for the recurrence operator that makes the iterated trajectory $\tau = \Iterate(U \circ C \circ K_\varphi \circ G_\theta \circ f_\theta, c_0)$ well-defined. $U$ is generic enough to not conflict with existing uses, and lowercase $u_t$ is reserved for governance actuation in the author's runtime-stabilization papers --- capital $U$ vs lowercase $u_t$ distinguishes them.}
+
+\notation{$a_t$}{An external action or tool call produced after parsing the model's token stream.}
+\reason{Literature}{Standard reinforcement-learning and POMDP convention for action at time $t$. Used in Sutton \& Barto, the broader RL literature, and the author's runtime-stabilization papers.}
+
+\notation{$o_t$}{An observation available to the agent, harness, operator, or organization.}
+\reason{Literature}{Standard POMDP convention. Used in the partially-observable-MDP literature, in the author's runtime-stabilization papers, and in the broader control-theory literature.}
+
+\notation{$\eta_t$}{Agent harness state at time $t$: step counter, planner state, retry state, runtime bookkeeping.}
+\reason{Disambiguating}{The framework needs a symbol for the agent runtime's bookkeeping state --- distinct from the model's hidden state $h_t$, distinct from the system state $S_t$, and distinct from the context $c_t$. Earlier framework drafts used $h_t$ for this purpose, which collided with the universal hidden-state convention. $\eta$ is a distinctive Greek letter with no conflicts in the author's prior work or in the literatures the framework draws on.}
+
+\section{System and Operational Layer}
+
+These symbols denote the operational environment and joint state of the deployed system.
+
+\notation{$S_t$}{The true environment/system state at time $t$. Generally only partially observed.}
+\reason{Literature}{Standard control-theory and POMDP convention. Used in the runtime-stabilization papers as $x_t$ (state in control-theory notation), but the framework uses $S_t$ to avoid collision with $x_t$ (input token) in the transformer pipeline. The capital-$S$ choice signals ``system'' mnemonically.}
+
+\notation{$\Omega_t$}{The full joint latent state at time $t$:
+\[
+\Omega_t = (S_t,\, c_t,\, \eta_t,\, \mu_t,\, T_t,\, P_t,\, h_t)
+\]}
+\reason{Framework-specific}{The framework needs a symbol for the complete latent state that produces an action. $\Omega$ is a standard choice in physics and probability for ``the full state of a system'' or ``the sample space,'' and is distinctive in this context. This object is the basis for the action-state non-recoverability claim in section 15 of the framework. Earlier framework drafts called this the ``joint action-state,'' which was misleading because in reinforcement learning ``action-state'' implies a tuple that includes the action (e.g., $(s, a)$ pairs in Q-learning). $\Omega_t$ represents the variables before the action is emitted, so ``joint latent state'' is more accurate. This terminology also aligns with paper3, which uses ``latent state'' for analogous objects.}
+
+\notation{$\mu_t$}{Retrieval/context-construction state at time $t$: which artifacts were retrieved, how they were ranked, and how they were composed into context.}
+\reason{Disambiguating}{Earlier framework drafts used $\rho_t$ for this purpose, which collided with $\rho(W)$ for spectral radius and with $\rho$ as maintenance ratio in the author's gravity-of-risk paper. An intermediate revision used $\gamma_t$ (mnemonic: ``gather''), which collided with $\gamma$ as the discount factor in reinforcement learning and Markov decision processes. $\mu_t$ is the chosen replacement; the mnemonic is ``memory'' --- the retrieval state is essentially the working memory of the context. The mild collision with statistical mean $\mu$ is distinguishable because mean is typically unsubscripted, while $\mu_t$ with a time index reads as a state variable.}
+
+\notation{$T_t$}{Tool and external service state at time $t$.}
+\reason{Framework-specific}{Mnemonic for ``tool.'' The capital-$T$-with-subscript form distinguishes it from generic time variables $T$ sometimes used in the dynamical-systems literature; the framework itself uses $H$ for the cascade horizon (section 16) to avoid visual collision with $T_t$.}
+
+\notation{$P_t$}{Process and user/organizational state at time $t$.}
+\reason{Framework-specific}{Mnemonic for ``process'' and ``people.'' Subscripted to distinguish from any other capital-$P$ uses.}
+
+\notation{$G_d$}{The documented graph: architecture diagrams, runbooks, specs, tests, dashboards, and process documentation.}
+\reason{Framework-specific}{Subscript $d$ for ``documented.'' Distinct from $G_a$ and $G_\tau$.}
+
+\notation{$G_a$}{The actual operational graph: the real graph including undocumented dependencies, informal process, human repair practices, stale conventions, shadow integrations, and emergency conventions.}
+\reason{Framework-specific, Literature}{Subscript $a$ for ``actual.'' Cook (1998) and Perrow (1984) describe this divergence in prose without formalizing it. The same divergence is canonically formalized in Resilience Engineering (Hollnagel, 2017) as the gap between Work-as-Imagined (WAI) and Work-as-Done (WAD) --- the difference between how work is described in procedures, dashboards, and specifications versus how it is actually performed under operational conditions. The framework's $G_d$ and $G_a$ translate this empirically observed operational gap into graph-theoretic form, supporting cascade and reachability analysis over the actual rather than documented structure.}
+
+\notation{$G_\tau$}{The operational closure generated over a trajectory $\tau$ when agents, feedback paths, response loops, human interventions, and adversarial channels interact.}
+\reason{Framework-specific}{Subscript $\tau$ for ``trajectory.'' Defined as $G_\tau = \Cl_{\text{op}}(G_a; A, B, R, H, Q)$ where $A, B, R, H, Q$ are channel categories. The framework introduces the closure concept to capture the empirical fact that the operational graph under agent deployment is partially produced by operation, not statically known in advance.}
+
+\section{Cascade Dynamics}
+
+\notation{$W$}{A weighted cascade propagation matrix over the operational graph being analyzed. $W_{ij}$ represents the expected downstream stress, load, or failure contribution from component $i$ to component $j$.}
+\reason{Literature, Disambiguating}{Standard network-science convention for weighted adjacency matrix (Newman, 2010; Watts, 2002; Lemonnier et al., 2014). Earlier framework drafts used $K$, which collided with three established uses: $K_\varphi$ for the sampling kernel in the security talk, $K$ for the gain matrix in the author's runtime-stabilization papers, and $K$ for the viability kernel in Aubin (1991). $W$ is the cleanest replacement and aligns with cascade-dynamics literature.}
+
+\notation{$\rho(W)$}{The spectral radius of $W$: the largest eigenvalue magnitude.}
+\reason{Literature}{Universal convention. Used in cascade-dynamics literature (Lemonnier et al., 2014; the directed Chung-Lu paper; the ecological-collectivity paper) and in the broader spectral-graph-theory literature. Note: $\rho$ also appears as the maintenance ratio $m/E$ in the author's gravity-of-risk paper. The two uses are distinguishable in context ($\rho(W)$ is a function of a matrix; $\rho$ in gravity-of-risk is a scalar quantity), but a reader navigating between works should be aware of the dual usage.}
+
+\notation{$\delta_t$}{A perturbation, stress, load, or failure vector in cascade dynamics at time $t$.}
+\reason{Literature, Disambiguating}{$\delta$ is standard for perturbation in dynamical systems and control. Earlier framework drafts used $x$ as the perturbation vector, which collided with $x_t$ for input token. $\delta$ is the cleaner choice. Note: $\delta$ also appears in the gravity-of-risk paper as the fraction of remaining survival margin consumed; in that paper $\delta$ is a scalar in $[0, 1]$, while here $\delta_t$ is a vector in $\mathbb{R}^n$. Different objects, different roles, different subscripting.}
+
+\notation{$\Delta_{\text{total}}$}{Total expected cascade burden over a finite horizon: $\Delta_{\text{total}} = \sum_{t=0}^{H} W^t \delta_0$.}
+\reason{Framework-specific}{Capital delta for ``total accumulated stress.'' Distinct from $\delta_t$ (a single perturbation vector) by capitalization.}
+
+\notation{$H$}{Time horizon (finite upper bound for cascade summation).}
+\reason{Literature, Disambiguating}{Standard control-theory and dynamical-systems notation for a discrete time horizon. Earlier framework drafts used $T$ as the summation upper bound, which created visual collision with $T_t$ for tool state. $H$ is the cleaner choice. Note: $H$ also appears in the framework as a channel category inside the operational closure operator $\Cl_{\text{op}}(G_a; A, B, R, H, Q)$, where it denotes human-intervention channels. The two uses are syntactically distinguishable --- $H$ as horizon appears as a summation upper bound or scalar, while $H$ as channel category appears unsubscripted inside the closure operator's argument list --- but readers should note the dual usage. Section~\ref{sec:conflicts} records this conflict.}
+
+\section{Reachability and Viability}
+
+\notation{$R_A$}{The agent reachable set: the set of trajectories reachable by the agent/composite under a given deployment.}
+\reason{Literature}{$R$ for ``reachable'' is standard in control theory and reachability analysis. Subscript $A$ for ``agent'' distinguishes from generic reachability. Note: $R$ also appears as the response-channel set in section 18 of the framework ($G_\tau = \Cl_{\text{op}}(G_a; A, B, R, H, Q)$). The two uses are distinguishable by context ($R_A$ is a subscripted set of trajectories; $R$ is an unsubscripted channel category in the closure operator), but a reader navigating section 18 should be aware. The framework explicitly notes this disambiguation in section 18.}
+
+\notation{$\mathcal{V}_S$}{The viable region of the system: the subset of states from which the system can avoid violating its operational constraints.}
+\reason{Disambiguating, Literature-adjacent}{In Aubin (1991), the standard notation is $K$ for the admissible constraint set (the environmental boundaries the system must stay within), and the viability kernel --- the largest viability domain inside $K$ --- is denoted $\Viab(K)$ or $\Viab_F(K)$. The framework uses $\mathcal{V}_S$ to map conceptually to Aubin's viability kernel construct while avoiding the overloading of $K$, which is already used in several places across the author's body of work (the gain matrix in runtime stabilization, the sampling kernel $K_\varphi$ in the security talk, and earlier framework drafts that used $K$ for the cascade matrix). $\mathcal{V}_S$ is the viable region; its mnemonic is ``viable region of the system.''}
+
+\notation{$\widehat{R}_A$}{The estimated agent reachable set under a given deployment model.}
+\reason{Framework-specific}{Hat notation for ``estimated'' is standard in statistics and control. Distinguishes the operator's model of reachability from the true reachable set $R_A$.}
+
+\notation{$\widehat{\mathcal{V}}_S$}{The estimated viable region of the system.}
+\reason{Framework-specific}{Hat notation for ``estimated.'' Distinguishes the operator's model from $\mathcal{V}_S$.}
+
+\section{Trajectory and Projection}
+
+\notation{$\tau$}{A trajectory: the iterated composite $\tau = \Iterate(U \circ C \circ K_\varphi \circ G_\theta \circ f_\theta, c_0)$ at the agent level, or the coupled agent-system trajectory at the operational level.}
+\reason{Literature, Framework-specific}{$\tau$ is the standard mathematical symbol for trajectory in dynamical-systems literature. The framework distinguishes the policy-level trajectory (around the primitive) from the system-level trajectory (the coupled agent-system dynamics) but uses $\tau$ for both with the convention established in section 14 that ``trajectory'' defaults to the coupled meaning unless specified. The $K_\varphi$ in the composition is required because the chain $G_\theta \circ f_\theta$ produces continuous logits, which must pass through the sampling kernel before the control layer $C$ (parsers, validators) can act on discrete tokens. Note: $\tau_R$ also appears in the gravity-of-risk paper as the ruin time $\tau_R := \inf\{t \ge 0 : x_t \in R\}$. Different object: $\tau_R$ is a stopping time (a scalar), while $\tau$ here is a trajectory (a function of time). The subscript $R$ distinguishes.}
+
+\notation{$\tau_{t:t+k}$}{The trajectory segment from time $t$ to time $t+k$.}
+\reason{Framework-specific}{Standard subscript convention for time intervals. Used in section 15 of the framework for the projection $\Pi(\Omega_t, \tau_{t:t+k})$.}
+
+\notation{$\Pi$}{The projection operator that maps the joint latent state $\Omega_t$ and the trajectory $\tau_{t:t+k}$ to observable outputs $O_{t+k}$.}
+\reason{JPA-consistent, Disambiguating}{Earlier framework drafts used $\pi$ for projection, which collides directly with $\pi$ as policy in reinforcement learning and POMDP literature --- readers from RL/AI backgrounds instinctively read $\pi(\cdot)$ as a policy distribution. $\Pi$ (capital) is the standard mathematical symbol for projection operators and is already used by the author in the runtime-stabilization papers as the projection in the control law $u_t = -K \cdot \Pi[\phi(o_{\le t}) - r_t]$. Switching to $\Pi$ aligns with both the author's prior work and the broader convention that disambiguates projection from policy.}
+
+\section{Other Notation}
+
+\notation{$O_{t+k}$}{Observable projections at time $t+k$: logs, traces, tool calls, prompts, outputs, user reports, support artifacts, post-hoc model explanations, consequences.}
+\reason{Framework-specific}{$O$ for ``observation/observable'' with the time index. Distinct from $o_t$ (single observation) by capitalization and by what it represents --- $O_{t+k}$ is the full set of projections accumulated by time $t+k$, not a single observation.}
+
+\notation{$\circ$}{Function composition.}
+\reason{Literature}{Universal mathematical convention.}
+
+\notation{$\Iterate(\cdot, c_0)$}{Iterated application of an operator with initial context $c_0$.}
+\reason{Framework-specific}{Used to make the trajectory equation explicit. Could be replaced by standard recurrence notation but the explicit $\Iterate(\cdot)$ reads more clearly in prose.}
+
+\notation{$\Cl_{\text{op}}(\cdot)$}{The operational closure operator: $\Cl_{\text{op}}(G_a; A, B, R, H, Q)$ generates the operational closure $G_\tau$ from the actual operational graph $G_a$ together with channel categories.}
+\reason{Framework-specific}{$\Cl$ is standard for closure in mathematics (topological closure, algebraic closure). The op subscript distinguishes operational closure from other closure notions.}
+
+\section{Symbol Conflicts to Watch}\label{sec:conflicts}
+
+The following symbols have multiple uses across the author's body of work, across adjacent literatures, or within this framework. Each use is distinguishable in context, but readers navigating between domains should be aware.
+
+\paragraph{$\rho$.}
+\begin{itemize}
+\item $\rho(W)$ --- spectral radius of cascade matrix (this framework, section 16).
+\item $\rho$ --- maintenance ratio $m/E$ (gravity-of-risk paper).
+\end{itemize}
+\textit{Distinguishing convention:} $\rho$ as a function of a matrix is spectral radius. $\rho$ as a scalar in a maintenance context is maintenance ratio.
+
+\paragraph{$\delta$.}
+\begin{itemize}
+\item $\delta_t$ --- perturbation vector at time $t$ (this framework, section 16).
+\item $\delta$ --- fraction of remaining survival margin consumed (gravity-of-risk paper).
+\end{itemize}
+\textit{Distinguishing convention:} subscripted $\delta_t$ is a vector. Unsubscripted $\delta$ in $[0, 1]$ is a scalar.
+
+\paragraph{$K$.}
+\begin{itemize}
+\item $K_\varphi$ --- sampling/decoding kernel (security talk).
+\item $K$ --- gain matrix in $u_t = -K \cdot \Pi[\phi(o_{\le t}) - r_t]$ (runtime-stabilization papers).
+\item $K$ --- viability kernel in Aubin (1991), referenced when discussing viability theory. Note: in Aubin, $K$ is more precisely the admissible constraint set, with $\Viab(K)$ denoting the viability kernel itself.
+\end{itemize}
+\textit{Distinguishing convention:} $K_\varphi$ has the $\varphi$ subscript for sampling. Other uses of $K$ are confined to specific contexts (control law in stabilization papers; viability kernel only when explicitly citing Aubin).
+
+\paragraph{$R$.}
+\begin{itemize}
+\item $R_A$ --- agent reachable set (this framework).
+\item $R$ --- response channels in operational closure (this framework, section 18).
+\end{itemize}
+\textit{Distinguishing convention:} $R_A$ is always subscripted with $A$. $R$ as a channel category appears only inside the $\Cl_{\text{op}}$ operator's argument list.
+
+\paragraph{$\tau$.}
+\begin{itemize}
+\item $\tau$ --- trajectory (this framework).
+\item $\tau_R$ --- ruin time (gravity-of-risk paper).
+\end{itemize}
+\textit{Distinguishing convention:} unsubscripted $\tau$ is a trajectory function. $\tau_R$ is a stopping time.
+
+\paragraph{$A$.}
+\begin{itemize}
+\item $A$ --- agent action channels in operational closure (this framework, section 18).
+\item $A$ --- adjacency matrix in network science (referenced in cascade discussions).
+\end{itemize}
+\textit{Distinguishing convention:} the framework uses $W$ for the cascade propagation matrix and reserves $A$ for the channel category in the closure operator. Where adjacency matrix conventions are referenced, the literature symbol is preserved in context.
+
+\paragraph{$\pi$.}
+\begin{itemize}
+\item The framework explicitly does not use $\pi$. Earlier drafts used $\pi$ for the projection operator, which collides with $\pi$ as policy in reinforcement learning and POMDP literature. The framework uses $\Pi$ (capital) for projection instead, aligned with the author's runtime-stabilization papers.
+\end{itemize}
+\textit{Distinguishing convention:} projection is always $\Pi$ (capital). The framework does not formalize a model policy; if one were introduced in future work, $\pi$ (lowercase) would be reserved for that.
+
+\paragraph{$\gamma$.}
+\begin{itemize}
+\item The framework explicitly does not use $\gamma$. An earlier draft used $\gamma_t$ for retrieval state with the ``gather'' mnemonic, but $\gamma$ is canonically the discount factor in reinforcement learning and Markov decision processes. The framework uses $\mu_t$ for retrieval state instead.
+\end{itemize}
+\textit{Distinguishing convention:} the framework reserves $\gamma$ for any future formalization that imports a discount factor; retrieval state is always $\mu_t$.
+
+\paragraph{$H$.}
+\begin{itemize}
+\item $H$ --- time horizon (finite upper bound for cascade summation, section 16).
+\item $H$ --- human-intervention channels in operational closure (this framework, section 18).
+\end{itemize}
+\textit{Distinguishing convention:} $H$ as horizon appears as a summation upper bound or scalar. $H$ as channel category appears unsubscripted inside $\Cl_{\text{op}}(G_a; A, B, R, H, Q)$. The syntactic positions distinguish the two uses.
+
+\paragraph{$T$.}
+\begin{itemize}
+\item $T_t$ --- tool and external service state at time $t$ (this framework, section 15).
+\item $T$ --- generic time variable in some equations.
+\end{itemize}
+\textit{Distinguishing convention:} $T_t$ is always subscripted. The framework avoids $T$ as a summation upper bound (using $H$ instead) to prevent visual collision with $T_t$.
+
+\paragraph{$t$ (temporal grain).}
+\begin{itemize}
+\item $t$ --- token position index in the autoregressive pipeline (this framework, section 1: $x_t$, $h_t$, $z_t$).
+\item $t$ --- environment/system time step in the operational layer (this framework, sections 2, 3, 4: $S_t$, $a_t$, $o_t$, $\eta_t$, $\mu_t$, $T_t$, $P_t$).
+\end{itemize}
+\textit{Distinguishing convention:} The two uses of $t$ operate on different timescales --- the token sequence is a fast inner loop, while system states and actions are a slower outer loop. One operational step typically involves many decode steps. Section 7 of the framework presents the agentic loop $S_t \to c_t \to z_{t+1} \to x_{t+1} \to a_t \to o_{t+1} \to S_{t+1}$ as a conceptual schematic that elides this distinction; in any formalization where the coupling between the two timescales is mathematically explicit, the token-level index should be subscripted distinctly ($k$ is reserved for this purpose, consistent with the working notation in section~\ref{sec:working} for $\Sigma_k$). Conflating the two timescales would imply that one token equals one environment step, which is generally false.
+
+\section{What Was Considered and Rejected}
+
+For transparency, the following alternatives were considered and rejected during the consistency pass.
+
+\paragraph{$F_\theta$ as a single symbol for the model.} Earlier framework drafts used $F_\theta(c_t) = z_t$ to denote the model's mapping from context to logits as a single function. Rejected because the literature consistently decomposes this into $f_\theta$ (recurrence) and $G_\theta$ (projection), and because the security talk uses the decomposed form. Collapsing the pipeline into a single $F_\theta$ would create a non-standard reading. The decomposed form is now used throughout.
+
+\paragraph{$A$ for the cascade matrix.} $A$ is the most standard symbol for adjacency matrix in network science. Rejected because $A$ is needed for ``agent action channels'' in the operational closure operator (section 18), and renaming $A$ there would be more invasive than choosing $W$ for the cascade matrix. $W$ is also standard for weighted adjacency, which is closer to what the framework's cascade matrix actually represents.
+
+\paragraph{$M$ for the cascade matrix.} Considered as a generic alternative. Rejected because $W$ is more specific to weighted adjacency in the cascade-dynamics literature and connects more directly to spectral-graph-theory conventions.
+
+\paragraph{$\rho_t$ for retrieval state.} Earlier framework drafts used $\rho_t$ for retrieval/context-construction state. Rejected because $\rho$ collides with spectral radius $\rho(W)$ and with maintenance ratio $\rho$ in the gravity-of-risk paper.
+
+\paragraph{$\gamma_t$ for retrieval state.} An intermediate revision used $\gamma_t$ (mnemonic: ``gather'') after rejecting $\rho_t$. Rejected in turn because $\gamma$ is canonically the discount factor in reinforcement learning and Markov decision processes --- readers from RL backgrounds will instinctively read $\gamma$ as discount factor first. $\mu_t$ is the chosen replacement.
+
+\paragraph{$h_t$ for harness state.} Earlier framework drafts used $h_t$ for ``agent harness state.'' Rejected because $h_t$ is the universal convention for hidden state in the transformer literature and in the security talk. Redirecting $h_t$ to mean hidden state aligns with both. $\eta_t$ replaces the earlier $h_t$ for harness state.
+
+\paragraph{$x_t$ for decoded output / action proposal.} Earlier framework drafts used $x_t$ for the decoded model output before tool-call parsing. Rejected because $x_t$ is the universal convention for input token in autoregressive language modeling. Aligning the framework's $x_t$ with the literature meant dropping the earlier usage entirely.
+
+\paragraph{$\pi$ for projection.} Earlier framework drafts used $\pi$ for the projection operator that maps $\Omega_t$ and trajectory segments to observable outputs. Rejected because $\pi$ is canonically the policy in reinforcement learning and POMDP literature --- readers from those backgrounds instinctively read $\pi(\cdot)$ as a policy distribution. $\Pi$ (capital) is now used for projection, which also aligns with the author's runtime-stabilization papers.
+
+\paragraph{$T$ as time horizon.} Earlier framework drafts used $T$ as the upper bound of the cascade summation $\sum_{t=0}^T$. Rejected because of visual collision with $T_t$ for tool state. $H$ replaces $T$ as the horizon symbol.
+
+\paragraph{``Joint action-state'' for $\Omega_t$.} Earlier framework drafts called $\Omega_t$ the ``joint action-state.'' Rejected because in reinforcement learning, ``action-state'' implies a tuple that includes the action (e.g., $(s, a)$ pairs in Q-learning). $\Omega_t$ represents the latent state before the action is emitted, so ``joint latent state'' is more accurate.
+
+\section{Cross-Reference to Author's Other Work}
+
+\renewcommand{\arraystretch}{1.2}
+\begin{small}
+\begin{longtable}{>{\raggedright\arraybackslash}p{3.4cm}>{\raggedright\arraybackslash}p{1.6cm}>{\raggedright\arraybackslash}p{1.6cm}>{\raggedright\arraybackslash}p{2.0cm}>{\raggedright\arraybackslash}p{2.0cm}>{\raggedright\arraybackslash}p{1.8cm}}
+\toprule
+\textbf{Concept} & \textbf{This framework} & \textbf{Security talk} & \textbf{Runtime stab.\ (paper2)} & \textbf{Trajectory gov.\ (paper3)} & \textbf{Gravity of Risk} \\
+\midrule
+\endfirsthead
+\toprule
+\textbf{Concept} & \textbf{This framework} & \textbf{Security talk} & \textbf{Runtime stab.\ (paper2)} & \textbf{Trajectory gov.\ (paper3)} & \textbf{Gravity of Risk} \\
+\midrule
+\endhead
+Hidden state                  & $h_t$        & $h_t$        & ---                & ---                & ---             \\
+Logits                        & $z_t$        & $z_t$        & ---                & ---                & ---             \\
+Sampling                      & $K_\varphi$  & $K_\varphi$  & ---                & ---                & ---             \\
+Input token                   & $x_t$        & $x_t$        & ---                & ---                & ---             \\
+Context                       & $c_t$        & (implicit)   & ---                & ---                & ---             \\
+Harness state                 & $\eta_t$     & ---          & ---                & ---                & ---             \\
+Retrieval state               & $\mu_t$      & ---          & ---                & ---                & ---             \\
+State (system / latent)       & $S_t$        & ---          & $x_t$              & $x_t$              & $x \in X$       \\
+Action                        & $a_t$        & ---          & $u_t$ (gov.)       & $u_t$ (gov.)       & ---             \\
+Observation                   & $o_t$        & ---          & $o_t$              & $y_t$              & ---             \\
+Reference / op.\ point        & ---          & ---          & $r_t$              & $r_t$              & ---             \\
+Projection                    & $\Pi$        & ---          & $\Pi$              & $\Pi$              & ---             \\
+Gain matrix                   & (not used)   & ---          & $K$                & $K$                & ---             \\
+Spectral radius               & $\rho(W)$    & ---          & ---                & ---                & ---             \\
+Cascade / propagation matrix  & $W$          & ---          & ---                & ---                & ---             \\
+Time horizon                  & $H$          & ---          & ---                & ---                & $T$ (in $p_T$)  \\
+Viability kernel / region     & $\mathcal{V}_S$ & ---       & ---                & ---                & (kernel via $\rho$) \\
+Ruin probability / time       & ---          & ---          & ---                & ---                & $p_T(x), \tau_R$\\
+Maintenance ratio             & ---          & ---          & ---                & ---                & $\rho$          \\
+\bottomrule
+\end{longtable}
+\end{small}
+
+The cells marked ``---'' indicate that the concept does not appear in that work, not that the work uses different notation.
+
+\section{Working Notation --- Active Research}\label{sec:working}
+
+This section records notation introduced in current research that has not yet been integrated into the framework's body but is consistent with the framework's conventions and reserved against future collisions. Working notation is more provisional than the symbols above: it may be refined, renamed, or absorbed into the main reference as the underlying research stabilizes.
+
+\subsection*{$\Sigma_k$ --- Full autoregressive inference state}
+
+\notation{$\Sigma_k$}{The full autoregressive inference state of the transformer at decode step $k$. The minimal time-indexed computational state that, together with the fixed parameters $\theta$, is sufficient to determine the next-token distribution and the update to the next decode state.}
+
+Formally, $\Sigma_k$ is any state variable such that there exist maps:
+\begin{align*}
+\pi_\theta(\,\cdot\, \mid \Sigma_k) &\quad \text{for the next-token distribution} \\
+U_\theta(\Sigma_k, y_{k+1}) = \Sigma_{k+1} &\quad \text{for the state update}
+\end{align*}
+and decoding is the discrete-time state process:
+\begin{align*}
+y_{k+1} &\sim \pi_\theta(\,\cdot\, \mid \Sigma_k) \\
+\Sigma_{k+1} &= U_\theta(\Sigma_k, y_{k+1})
+\end{align*}
+
+For a standard autoregressive transformer, $\Sigma_k$ typically includes:
+\begin{enumerate}
+\item The current tokenized context $y_{\le k}$
+\item The KV cache / attention memory accumulated so far
+\item Current hidden activations relevant to computing the next logits
+\item Decoder-side auxiliary state (beam-search state, sampler state, tool-call state, etc., where modeled as part of the system)
+\end{enumerate}
+
+\reason{Framework-specific (working)}{$\Sigma$ is distinctive --- not used elsewhere in the author's body of work or in the adjacent literatures the framework draws on (transformer literature, POMDP, control theory, network science, viability theory). The capital sigma notation signals deliberately that this is a richer state object than $h_t$ alone, which is one realized representation slice rather than the full running computational state of generation.}
+
+\subsection*{Relationship to existing notation}
+
+The relationship between $\Sigma_k$ and existing notation is layered, not redundant:
+
+\paragraph{$\Sigma_k$ vs $h_t$.} A hidden state $h_t$ is a \emph{component} or \emph{slice} of $\Sigma_k$, not the whole thing. $h_t$ is the conditioned hidden state at one decode step; $\Sigma_k$ is the full computational state required to continue generation. Informally, $h_t \subset \Sigma_k$.
+
+\paragraph{$\Sigma_k$ vs $\Omega_t$.} $\Sigma_k$ and $\Omega_t$ live at different layers and capture different things. $\Sigma_k$ is the model's pure inference state (model-internal). $\Omega_t$ is the broader joint latent state of the operational world (agent + system + harness + retrieval + tools + process + model). $\Sigma_k$ is finer-grained on the model side but does not include operational components. $\Omega_t$ is coarser-grained on the model side (it lists $h_t$ but not the KV cache or decoder auxiliary state) but captures more of the operational world.
+
+A rough correspondence:
+\begin{align*}
+\Sigma_k &\approx (c_t,\, h_t,\, \text{KV cache},\, \text{decoder-side state}) \quad \text{[model-side, fine-grained]} \\
+\Omega_t &= (S_t,\, c_t,\, \eta_t,\, \mu_t,\, T_t,\, P_t,\, h_t) \quad \text{[operational, coarser on the model]}
+\end{align*}
+
+\paragraph{$\Sigma_k$ vs $c_t$.} The accumulated context $c_t$ is part of $\Sigma_k$ (specifically $y_{\le k}$), but $\Sigma_k$ contains additional inference machinery (KV cache, current activations) that $c_t$ does not. $c_t$ is what the model sees as input; $\Sigma_k$ is what the model has internally computed up to and including the current step.
+
+\paragraph{$\theta$.} Not part of $\Sigma_k$. $\theta$ is the fixed learned operator; $\Sigma_k$ is the time-indexed running state under that operator. Same convention as throughout the framework.
+
+\subsection*{Indexing: $k$ vs $t$}
+
+The $\Sigma_k$ notation uses $k$ to index autoregressive decode steps within a single inference. The framework's main notation uses $t$ to index the broader trajectory time. These are different scales:
+
+\begin{itemize}
+\item $k$ indexes individual token-generation steps inside one model inference (one forward pass per step within one continuation)
+\item $t$ indexes operational time across the full agent-system trajectory (one inference may span many decode steps; one trajectory step may involve one or many model inferences)
+\end{itemize}
+
+When both scales are needed in the same context, the relationship is approximately: each operational step $t$ involves one or more decode-step ranges $\Sigma_k \to \Sigma_{k+1} \to \ldots$ within a single inference, followed by an action and an observation.
+
+\subsection*{Tokens: $y$ vs $x$}
+
+The $\Sigma_k$ working document uses $y_{k+1}$ for the output token at decode step $k+1$. The framework's main notation uses $x_{t+1}$ for the same role. Both have precedent in autoregressive language modeling literature, and the two indexing systems are different ($k$ vs $t$), so the symbol difference does not produce internal conflict. In future work that bridges both notations explicitly, the choice can be standardized; for now they coexist.
+
+\subsection*{$\pi_\theta$ in the working notation}
+
+The $\Sigma_k$ document uses $\pi_\theta(\,\cdot\, \mid \Sigma_k)$ for the next-token distribution. This is consistent with the framework's explicit reservation of $\pi$ for policy in the RL/POMDP sense --- the next-token distribution in autoregressive models \emph{is} a policy. The framework uses $\Pi$ (capital) for projection precisely to leave $\pi$ available for this kind of policy interpretation in future formalization. The two uses are mutually consistent without coordination.
+
+\subsection*{$U_\theta$ in the working notation}
+
+The $\Sigma_k$ document uses $U_\theta$ for the state update operator $\Sigma_{k+1} = U_\theta(\Sigma_k, y_{k+1})$. This is consistent with the framework's $U$ as the context/state update operator, just at a different layer. In the framework, $U$ operates at the operational level, incorporating tool observations, memory, and environment feedback. In the working notation, $U_\theta$ operates at the inference level, taking $\Sigma_k$ and the sampled token $y_{k+1}$ to produce $\Sigma_{k+1}$. Same letter, same role conceptually (state update), different layer of analysis.
+
+\subsection*{What this section is reserving}
+
+By recording $\Sigma_k$ here as working notation, the framework explicitly reserves against:
+
+\begin{itemize}
+\item Future use of capital $\Sigma$ in the framework body for any other purpose
+\item Future redefinition of $\pi_\theta$, $U_\theta$, $y_{k+1}$, $k$, or $h_t$ in ways that would conflict with the working notation above
+\item Conflation of $\Sigma_k$ (model inference state) with $\Omega_t$ (operational joint latent state) --- they are different objects at different layers
+\end{itemize}
+
+This section will be updated as the underlying research matures. Symbols introduced here may be promoted to the main reference (sections 1--10) once they are integrated into the framework's body, or refined further as the work develops.
+
+\section*{References}
+\addcontentsline{toc}{section}{References}
+
+\begin{description}[leftmargin=1.5em, labelindent=0em, itemsep=0.4em]
+\item Alioto, J. P. (2025). \emph{Ambient reachability attacks} (Working paper v0.0.1).
+
+\item Alioto, J. P. (2026). \emph{Gravity of risk: A barrier-coordinate theory of existential risk measurement} (Working paper v0.0.1).
+
+\item Aubin, J.-P. (1991). \emph{Viability theory}. Birkh\"auser.
+
+\item Cook, R. I. (1998). \emph{How complex systems fail}. Cognitive Technologies Laboratory, University of Chicago.
+
+\item Hollnagel, E. (2017). \emph{Safety-II in practice: Developing the resilience potentials}. Routledge.
+
+\item Lemonnier, R., Scaman, K., \& Vayatis, N. (2014). \emph{Tight bounds for influence in diffusion networks and application to bond percolation and epidemiology}. arXiv:1407.4744.
+
+\item Newman, M. E. J. (2010). \emph{Networks: An introduction}. Oxford University Press.
+
+\item Perrow, C. (1984). \emph{Normal accidents: Living with high-risk technologies}. Basic Books.
+
+\item Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, \L., \& Polosukhin, I. (2017). Attention is all you need. \emph{Advances in Neural Information Processing Systems}, 30.
+
+\item Watts, D. J. (2002). A simple model of global cascades on random networks. \emph{Proceedings of the National Academy of Sciences}, 99(9), 5766--5771.
+\end{description}
+
+\end{document}
