@@ -1,6 +1,6 @@
 # Agent Lifecycle Framework
 
-A working framework for analyzing the full lifecycle of AI agents — from the irreducible primitive they are built around, through composition, deployment, operational coupling, and the dynamics that govern how they collide with the systems they are deployed into.
+A work-in-progress framework for analyzing the full lifecycle of AI agents — from the irreducible primitive they are built around, through composition, deployment, operational coupling, and the dynamics that govern how they collide with the systems they are deployed into.
 
 ## What this is
 
@@ -14,7 +14,7 @@ The current document focuses primarily on the deployment and operational-couplin
 
 This is not yet a software framework. There is no library to install, no agent harness to deploy, no SDK. The repository is an analytical foundation for that future work. Proof-of-concept tooling around the structural ideas — instrumentation for trajectory traces, tooling for cascade analysis over operational closures, viability-aware deployment harnesses — is plausible follow-on work but is not present here.
 
-This is also not a peer-reviewed paper. It is a working document, calibrated for analytical density rather than academic conventions. It will be revised as additional incidents, predictions, and analytical refinements emerge.
+This is also not a peer-reviewed paper. It is a work-in-progress document, calibrated for analytical density rather than academic conventions. It will be revised as additional incidents, predictions, and analytical refinements emerge.
 
 ## Contents
 
@@ -68,11 +68,11 @@ The framework's notation conventions are versioned with the framework. The notat
 
 ## Status
 
-Working document. Stable enough to cite. Will be revised.
+Work in progress. Stable enough to cite. Will be revised.
 
 ## License
 
-Pending. Contact the author for licensing questions in the meantime.
+MIT. See `LICENSE` for the full text.
 
 ## Contact
 
